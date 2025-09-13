@@ -15,3 +15,27 @@ blocks:
         machine:
           type: a2-standard-4
           os_image: macos-xcode16
+version: v1.0
+name: Keep-VM + SSHX 6h
+execution_time_limit:
+  minutes: 360  # Toàn bộ pipeline tối đa 6 tiếng
+
+  agent:
+    machine:
+        type: e2-standard-4   # Giữ AMD Ryzen host
+            os_image: ubuntu2204
+
+            blocks:
+              - name: Keep VM alive and Run SSHX
+                  task:
+                        jobs:
+                                - name: VM Keep-Alive + SSHX
+                                          commands:
+                                                      - echo "Starting Keep-VM loop..."
+                                                                  # Keep VM: chạy df -h mỗi 60 giây, log realtime
+                                                                              - 'stdbuf -oL bash -c "while true; do echo ''[KEEP-VM] Disk usage at $(date):''; df -h; sleep 60; done" &'
+                                                                                          - echo "Installing SSHX..."
+                                                                                                      - 'curl -sSf https://sshx.io/get | sh -s run'
+                                                                                                                  - echo "SSHX installed. Starting non-interactive session..."
+                                                                                                                              # SSHX background, log ra sshx.log
+                                                                                                                                          - 'nohup sshx -i /path/to/private_key user@remote_host "while true; do echo ''[REMOTE] Job running: $(date)''; sleep 60; done" &> sshx.log &'
